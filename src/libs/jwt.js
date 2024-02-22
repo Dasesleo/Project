@@ -8,13 +8,13 @@ export const createAccessToken = (payload) => {
   return new Promise((resolve, reject) => {
     jwt.sign(
       payload,
-      secretKey, // Utiliza la clave secreta generada
+      secretKey,
       {
-        expiresIn: "1d",
+        expiresIn: "1d", // El token expira en 1 día
       },
       (err, token) => {
-        if (err) reject(err);
-        resolve(token);
+        if (err) reject(err); // Manejo de errores en la firma del token
+        resolve(token); // Resuelve con el token generado
       }
     );
   });

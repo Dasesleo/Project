@@ -2,6 +2,7 @@ import bcrypt from "bcrypt"; // Importación del módulo bcrypt para el hashing 
 import { pool } from "../db.js"; // Importación del pool de conexiones a la base de datos
 import { createAccessToken } from "../libs/jwt.js"; // Importación de la función para crear tokens de acceso JWT
 import md5 from 'md5'; // Importación de md5 para generar gravatar hashes
+import { validationResult } from "express-validator";
 
 // Constantes para el control de intentos de inicio de sesión
 const MAX_LOGIN_ATTEMPTS = 3; // Número máximo de intentos permitidos
@@ -11,6 +12,12 @@ let loginAttempts = {}; // Objeto para rastrear los intentos de inicio de sesió
 
 // Función para manejar el inicio de sesión
 export const signin = async (req, res) => {
+  // Validar la entrada usando express-validator
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { email, password } = req.body; // Extracción del correo electrónico y la contraseña del cuerpo de la solicitud
 
   const now = Date.now(); // Obtención de la hora actual
@@ -79,6 +86,12 @@ export const signin = async (req, res) => {
 
 // Función para manejar el registro de usuarios
 export const signup = async (req, res, next) => {
+  // Validar la entrada usando express-validator
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { name, email, password } = req.body; // Extracción del nombre, correo electrónico y contraseña del cuerpo de la solicitud
 
   try {
@@ -132,3 +145,18 @@ export const profile = async (req, res) => {
   // Devolver los datos del usuario como respuesta
   return res.json(result.rows[0]);
 }
+
+// Middleware para validar el cuerpo de la solicitud en el inicio de sesión y registro
+export const validateInput = (req, res, next) => {
+  req.checkBody("email", "El correo electrónico es obligatorio").notEmpty().isEmail();
+  req.checkBody("password", "La contraseña es obligatoria").notEmpty();
+
+  req.sanitizeBody("email").normalizeEmail({ gmail_remove_dots: false });
+
+  const errors = req.validationErrors();
+  if (errors) {
+    return res.status(400).json({ errors: errors });
+  } else {
+    next();
+  }
+};
